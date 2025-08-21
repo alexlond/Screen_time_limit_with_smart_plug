@@ -1,0 +1,14 @@
+[Unit]
+Description=Tv Telegram bot per controllare spina intelligente Meross per limitare Tv
+After=multi-user.target
+
+[Service]
+Type=idle
+User=root
+WorkingDirectory=/home/alexl/tv
+ExecStart=/home/alexl/venvTv/bin/python3 /home/alexl/tv/TvTelegramBot.py
+KillSignal=SIGINT
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
