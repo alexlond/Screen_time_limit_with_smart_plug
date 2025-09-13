@@ -705,7 +705,7 @@ async def status_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     global instant_consumption
     global global_error_minutes
     global half_hours
-    boot_time = datetime.datetime.fromtimestamp(psutil.boot_time())
+    boot_time = datetime.fromtimestamp(psutil.boot_time())
     #print(f"Last boot: {boot_time}")
     await update.message.reply_text("time: " + str(datetime.now()) + " last boot: " + str(boot_time) + ", Remaining minutes: " + str(global_daily_minutes-global_daily_used_minutes)+" out of "+str(global_daily_minutes)+" minutes, error minutes " + str(global_error_minutes) + " half hours: " + str(half_hours) )
     await update.message.reply_text("Commands: " + commands + ", plug: " + str(instant_consumption))
