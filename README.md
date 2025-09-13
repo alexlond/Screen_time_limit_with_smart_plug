@@ -13,7 +13,8 @@
   - [Create the “venv” Virtual environment for python](#create-the-venv-virtual-environment-for-python)
   - [Use venv](#use-venv)
   - [create a .env file with the credentials of the services](#create-a-env-file-with-the-credentials-of-the-services)
-  - [Copy files from pc with Ms Windows to raspberry Pi](#copy-files-from-pc-with-ms-windows-to-raspberry-pi)
+  - [Copy files from Ubuntu to Raspberry Pi](#copy-files-from-ubuntu-to-raspberry-pi)
+  - [Copy files from Ms Windows to Raspberry Pi](#copy-files-from-ms-windows-to-raspberry-pi)
   - [Use systemD to start the script at boot:](#use-systemd-to-start-the-script-at-boot)
   - [optimizing power consumption](#optimizing-power-consumption)
     - [turn off USB port](#turn-off-usb-port)
@@ -162,8 +163,13 @@ EMAIL = "email_registered_with_meross@provider.com"
 PASSWORD = "password_registered_with_meross"
 AUTHORIZED_USER_ID = nnnnnnnnnn
 chatID='-nnnnnnnnnn'</pre>
+## <span id="anchor-42"></span><span id="anchor-43"></span><span id="anchor-44"></span><span id="anchor-45"></span><span id="anchor-46"></span><span id="anchor-47"></span>Copy files from Ubuntu to Raspberry Pi
+From terminal, without being connected through “ssh”:
 
-## <span id="anchor-42"></span><span id="anchor-43"></span><span id="anchor-44"></span><span id="anchor-45"></span><span id="anchor-46"></span><span id="anchor-47"></span>Copy files from pc with Ms Windows to raspberry Pi
+alex@alex:~/Downloads$ `scp /home/alex/Documents/pythonProjects/Screen_time_limit_with_smart_plug/TvTelegramBot.py alexl@raspberrypi:tv
+TvTelegramBot.py `
+
+## <span id="anchor-42"></span><span id="anchor-43"></span><span id="anchor-44"></span><span id="anchor-45"></span><span id="anchor-46"></span><span id="anchor-47"></span>Copy files from Ms Windows to Raspberry Pi
 
 From poweshell, without being connected through “ssh”:
 

@@ -39,6 +39,7 @@ from meross_iot.controller.mixins.electricity import ElectricityMixin
 from meross_iot.http_api import MerossHttpClient
 from meross_iot.manager import MerossManager
 from dotenv import load_dotenv
+import psutil
 
 # Load environment variables
 load_dotenv()
@@ -127,7 +128,7 @@ class WeeklyCalendar:
         # Generate time slots from 7:30 to 23:30 in 30-minute intervals
         self.time_slots = []
         hour = 7
-        minute = 30
+        minute = 0
         while hour < 23 or (hour == 23 and minute <= 30):
             self.time_slots.append(f"{hour:02d}:{minute:02d}")
             minute += 30
@@ -345,7 +346,10 @@ def check_time(time_obj):
             slot_start = dttime(slot_hour, slot_minute)
             
             # Calculate slot end time (30 minutes later)
-            slot_end_minute = slot_minute + 30
+            if slot_hour == 23:
+                slot_end_minute = slot_minute + 29  #otherwise it goes to next day and becomes smaller than current time
+            else:
+                slot_end_minute = slot_minute + 30
             slot_end_hour = slot_hour
             if slot_end_minute >= 60:
                 slot_end_minute -= 60
@@ -701,7 +705,9 @@ async def status_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     global instant_consumption
     global global_error_minutes
     global half_hours
-    await update.message.reply_text("Remaining minutes: " + str(global_daily_minutes-global_daily_used_minutes)+" out of "+str(global_daily_minutes)+" minutes, error minutes " + str(global_error_minutes) + " half hours: " + str(half_hours) + ", time: " + str(datetime.now()))
+    boot_time = datetime.datetime.fromtimestamp(psutil.boot_time())
+    #print(f"Last boot: {boot_time}")
+    await update.message.reply_text("time: " + str(datetime.now()) + " last boot: " + str(boot_time) + ", Remaining minutes: " + str(global_daily_minutes-global_daily_used_minutes)+" out of "+str(global_daily_minutes)+" minutes, error minutes " + str(global_error_minutes) + " half hours: " + str(half_hours) )
     await update.message.reply_text("Commands: " + commands + ", plug: " + str(instant_consumption))
 
 async def restart_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
