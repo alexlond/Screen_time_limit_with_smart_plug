@@ -28,7 +28,7 @@
 
 
 # <span id="anchor"></span>About 
-The televisions are powered by smart plugs. A smart plug is turned off after a certain daily limit of minutes has been reached or outside allowed time slots(30 mins each) ranging from 7:30 am to midnight. The cable of the tv is glued to the plug with a very small amount (so as not to impede heat dissipation) of fire-resistant glue for electrical parts. Disclaimer: i this document I am describing my implementation; I am not suggesting you do the same, safety must be assessed by a professional.
+The televisions are powered by smart plugs. A smart plug is turned off after a certain daily limit of minutes has been reached or outside allowed time slots(30 mins each) ranging from 7:30 am to midnight. The cable of the tv is glued to the plug with a very small amount (so as not to impede heat dissipation) of fire-resistant glue for electrical parts. Disclaimer: in this document(and project) I am describing my implementation; I am not suggesting you do the same, safety must be assessed by a professional.
 
 "TvTelegramBotMQTT.py" runs in a Raspberry Pi Zero W, four Tasmota plugs (Refoss P11) and uses the messaging app Telegram to communicate with the users.
 
