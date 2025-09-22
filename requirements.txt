@@ -14,10 +14,12 @@ h11==0.16.0
 httpcore==1.0.9
 httpx==0.28.1
 idna==3.10
+aiomqtt>=1.0.0
 meross_iot==0.4.8.0
 multidict==6.6.4
 paho-mqtt==1.6.1
 propcache==0.3.2
+psutil==7.0.0
 pycares==4.10.0
 pycparser==2.22
 pycryptodomex==3.23.0

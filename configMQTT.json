@@ -1,0 +1,30 @@
+{
+  "daily_minutes": 125,
+  "powered_on_min_watts": 10,
+  "broker": "192.168.1.27",
+  "port": 1883,
+  "interval_minutes": 2,
+  "default_daily_minutes": 125,
+  "plugs": [
+    {
+      "name": "plug_salotto",
+      "topic_prefix": "tasmota_502E10",
+      "active": true
+    },
+    {
+      "name": "plug_ale",
+      "topic_prefix": "tasmota_502EAF",
+      "active": true
+    },
+    {
+      "name": "plug3",
+      "topic_prefix": "tasmota_502D76",
+      "active": false
+    },
+    {
+      "name": "plug4",
+      "topic_prefix": "tasmota_546D20",
+      "active": false
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+[Unit]
+Description=Tv Telegram bot to control Tasmota smart plugs to limit screen time
+After=multi-user.target
+
+[Service]
+Type=idle
+User=root
+WorkingDirectory=/home/alexl/tv
+ExecStart=/home/alexl/venvTv/bin/python3 /home/alexl/tv/TvTelegramBotMQTT.py
+KillSignal=SIGINT
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
