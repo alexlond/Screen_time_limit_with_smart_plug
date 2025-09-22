@@ -1,27 +1,6 @@
 #!/usr/bin/env python3
 # TvTelegramBot.py
 # Multi-plug / multi-user Telegram bot with per-user booking calendar (admin-only)
-#
-# Requirements:
-#   pip install python-telegram-bot aiomqtt python-dotenv psutil requests
-#
-# Set environment variables (or .env):
-#   TELEGRAM_BOT_TOKEN
-#   AUTHORIZED_USER_ID  (admin numeric Telegram user id)
-#   chatID (optional broadcast chat id)
-#
-# config.json (optional) may hold:
-# {
-#   "broker": "192.168.1.27",
-#   "port": 1883,
-#   "powered_on_min_watts": 30,
-#   "interval_minutes": 2,
-#   "default_daily_minutes": 100,
-#   "plugs": [
-#     {"name": "plug1", "topic_prefix": "tasmota_502E10"},
-#     {"name": "plug2", "topic_prefix": "tasmota_ABCD12"}
-#   ]
-# }
 
 import asyncio
 import json
