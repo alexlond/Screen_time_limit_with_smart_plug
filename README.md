@@ -1,4 +1,4 @@
-<span style="font-size:24px; font-weight:bold;">Screen time parental control for tv/console</span>
+<span style="font-size:24px; font-weight:bold;">Screen Time Parental Control for tv/monitor</span>
 
 <span style="font-size:20px; font-weight:bold;">📂 Table of Contents</span>
 
@@ -9,12 +9,12 @@
   - [📱 How to get the Chat ID](#-how-to-get-the-chat-id)
 - [Raspberry Pi Zero W](#raspberry-pi-zero-w)
   - [Prepare an SD card with a Raspberry Pi OS image (so you can boot it).](#prepare-an-sd-card-with-a-raspberry-pi-os-image-so-you-can-boot-it)
-  - [Connecting to raspberry pi via SSH in Ms Windows](#connecting-to-raspberry-pi-via-ssh-in-ms-windows)
+  - [Connecting to Raspberry Pi via SSH in Ms Windows](#connecting-to-raspberry-pi-via-ssh-in-ms-windows)
   - [Create the “venv” Virtual environment for python](#create-the-venv-virtual-environment-for-python)
   - [Use venv](#use-venv)
   - [create a .env file with the credentials of the services](#create-a-env-file-with-the-credentials-of-the-services)
-  - [create a "usersMQTT.json" file with the data of the users](#create-a-usersmqttjson-file-with-the-data-of-the-users)
-  - [create a "calendarMQTT.json" file with the data of the users](#create-a-calendarmqttjson-file-with-the-data-of-the-users)
+  - [create a "usersMQTT.json" file with the data of the users, e.g.:](#create-a-usersmqttjson-file-with-the-data-of-the-users-eg)
+  - [create a "calendarMQTT.json" file with the datime slots of the users, e.g.:](#create-a-calendarmqttjson-file-with-the-datime-slots-of-the-users-eg)
   - [Copy files from Ubuntu to Raspberry Pi](#copy-files-from-ubuntu-to-raspberry-pi)
   - [Copy files from Ms Windows to Raspberry Pi](#copy-files-from-ms-windows-to-raspberry-pi)
   - [Copy the file to the right folder from an ssh session connected ot the Raspberry Pi](#copy-the-file-to-the-right-folder-from-an-ssh-session-connected-ot-the-raspberry-pi)
@@ -28,24 +28,25 @@
 
 
 # <span id="anchor"></span>About 
-The televison and the console are powered by a smart plug. The smart plug is turned off after a certain daily limit of minutes has been reached or outside allowed time slots(30 mins each) ranging from 7:30 am to midnight. My smart plug powers a television and a playstation 5.
+The televisions are powered by smart plugs. A smart plug is turned off after a certain daily limit of minutes has been reached or outside allowed time slots(30 mins each) ranging from 7:30 am to midnight. The cable of the tv is glued to the plug with a very small amount (so as not to impede heat dissipation) of fire-resistant glue for electrical parts. Disclaimer: i this document I am describing my implementation; I am not suggesting you do the same, safety must be assessed by a professional.
 
-"TvTelegramBotMQTT.py" runs in a Raspberry Pi Zero W, four Tasmota plugs (Refoss P11) and uses the messaging app Telegram to communicate with the user.
+"TvTelegramBotMQTT.py" runs in a Raspberry Pi Zero W, four Tasmota plugs (Refoss P11) and uses the messaging app Telegram to communicate with the users.
 
-"TvTelegramBot.py" runs in a Raspberry Pi Zero W, a Meross smart plug (MSS310R) and uses the messaging app Telegram to communicate with the user.
+The script manages 4 plugs and five telegram Users. The first plug is associated by default to the user "Manoel", if another users starts the plug and then stops it, the plug is assigned again to "Manoel". Error minutes from any plugs are assigned to "Manoel" to decrease the risk of tampering. System uptime is shown to decrease the risk of tampering by turning off the Rasperry Pi.
 
-"TvTelegramBotMQTT.py" is more advanced because it manages 4 plugs and five users. The first plug is associated by default to the user "Manoel", if another users starts the plug and then stops it, the plug is assigned to "Manoel". Error minutes from any plugs are assigned to "Manoel" to decrease the risk of tampering. System uptime is shown to decrease the risk of tampering by turning off the Rasperry Pi.
+The script is run at boot via systemd, so you just have to connect the Rapsberry Pi Zero W to the power supply. 
 
-The scripts are run at boot via systemd, so you just have to connect the Rapsberry Pi Zero W to the power supply. 
+A user can connect/disconnect from a plug in order to turn it on and use their minutes
+There is a maximum amount of minutes (available every day) for each user that resets after midnight. 
+The maximum amout of minutes and the time slots are saved to json files. If the smart plug is disconnected "error" minutes are added. 
 
-There is a maximum amount of minutes (available every day) that resets after midnight. 
-The maximum amout of minutes and the time slots are saved to json files.
-
-Every two minutes the power delivered by the smart plug is read and if it is greater than the threshold "powered_on_min_watts" the available amounts of minutes is decreased. The threshold is useful because the console can consume power whilst in stand-by.
+Every two minutes the power delivered by the smart plug is read and if it is greater than the threshold "powered_on_min_watts" the available amounts of minutes is decreased. The threshold is useful because the television can consume power whilst in stand-by.
 Minutes can be added or subtracted durign the day but these changes are lost after midnight.
-Every half hour the bot writes to telegram its status. If the smart plug is disconnected "error" minutes are added. 
+Every half hour the bot writes to telegram its status. 
 The timeslots can be set for each week day. 
 Every half hour the script posts to telegram a status message.
+
+There is also a simplified version of the script, "TvTelegramBot.py" which uses a Raspberry Pi Zero W, a Meross smart plug (MSS310R) and the messaging app Telegram to communicate with the user.
 
 # <span id="anchor-1"></span><span id="anchor-2"></span><span id="anchor-3"></span><span id="anchor-4"></span><span id="anchor-5"></span>Telegram Bot and chat
 
@@ -120,7 +121,7 @@ style="width:5.6354in;height:6.8957in" />
 In Raspberry Pi Zero W I have created the folders “tv” for the script
 and "venvTv" for the Virtual environment
 
-## <span id="anchor-24"></span><span id="anchor-25"></span><span id="anchor-26"></span><span id="anchor-27"></span><span id="anchor-28"></span><span id="anchor-29"></span>Connecting to raspberry pi via SSH in Ms Windows
+## <span id="anchor-24"></span><span id="anchor-25"></span><span id="anchor-26"></span><span id="anchor-27"></span><span id="anchor-28"></span><span id="anchor-29"></span>Connecting to Raspberry Pi via SSH in Ms Windows
 
 `ssh alexl@raspberrypi` or, less securely: `ssh -o
 StrictHostKeyChecking=no alexl@raspberrypi`. If it gives an error and
@@ -179,7 +180,7 @@ AUTHORIZED_USER_ID = nnnnnnnnnn
 AUTHORIZED_USER_ID_MQTT = 
 chatID='-nnnnnnnnnn'
 chatID_MQTT='-nnnnnnnnnn'</pre>
-## <span id="anchor-48"></span><span id="anchor-49"></span><span id="anchor-50"></span><span id="anchor-51"></span><span id="anchor-52"></span><span id="anchor-53"></span>create a "usersMQTT.json" file with the data of the users
+## <span id="anchor-48"></span><span id="anchor-49"></span><span id="anchor-50"></span><span id="anchor-51"></span><span id="anchor-52"></span><span id="anchor-53"></span>create a "usersMQTT.json" file with the data of the users, e.g.:
 <pre>{
   "100001": {
     "user_id": 100001,
@@ -212,7 +213,7 @@ chatID_MQTT='-nnnnnnnnnn'</pre>
     "remaining_minutes": 125
   }
 }</pre>
-## <span id="anchor-48"></span><span id="anchor-49"></span><span id="anchor-50"></span><span id="anchor-51"></span><span id="anchor-52"></span><span id="anchor-53"></span>create a "calendarMQTT.json" file with the data of the users
+## <span id="anchor-48"></span><span id="anchor-49"></span><span id="anchor-50"></span><span id="anchor-51"></span><span id="anchor-52"></span><span id="anchor-53"></span>create a "calendarMQTT.json" file with the datime slots of the users, e.g.:
 <pre>{
   "Mon": {
     "08:00": {
@@ -250,6 +251,18 @@ From terminal, without being connected through “ssh”:
 alex@alex:~/Downloads$ `scp /home/alex/Documents/pythonProjects/Screen_time_limit_with_smart_plug/TvTelegramBotMQTT.py alexl@raspberrypi:tv
 TvTelegramBotMQTT.py `
 
+alex@alex:~/Downloads$ `scp /home/alex/Documents/pythonProjects/Screen_time_limit_with_smart_plug/.env alexl@raspberrypi:tv
+.env `
+
+alex@alex:~/Downloads$ `scp /home/alex/Documents/pythonProjects/Screen_time_limit_with_smart_plug/calendarMQTT.json alexl@raspberrypi:tv
+calendarMQTT.json`
+
+alex@alex:~/Downloads$ `scp /home/alex/Documents/pythonProjects/Screen_time_limit_with_smart_plug/configMQTT.json alexl@raspberrypi:tv
+configMQTT.json`
+
+alex@alex:~/Downloads$ `scp /home/alex/Documents/pythonProjects/Screen_time_limit_with_smart_plug/tvTelegramMQTT.service alexl@raspberrypi:tv
+tvTelegramMQTT.service`
+
 ## <span id="anchor-42"></span><span id="anchor-43"></span><span id="anchor-44"></span><span id="anchor-45"></span><span id="anchor-46"></span><span id="anchor-47"></span>Copy files from Ms Windows to Raspberry Pi
 
 From poweshell, without being connected through “ssh”:
@@ -278,7 +291,7 @@ It is a good idea to check if the files has been copied by going into the folder
 
 ## <span id="anchor-48"></span><span id="anchor-49"></span><span id="anchor-50"></span><span id="anchor-51"></span><span id="anchor-52"></span><span id="anchor-53"></span>Use systemD to start the script at boot:
 
-[**https://learn.adafruit.com/python-virtual-environment-usage-on-raspberry-pi/automatically-running-at-boot**](https://learn.adafruit.com/python-virtual-environment-usage-on-raspberry-pi/automatically-running-at-boot)
+Credits: [**https://learn.adafruit.com/python-virtual-environment-usage-on-raspberry-pi/automatically-running-at-boot**](https://learn.adafruit.com/python-virtual-environment-usage-on-raspberry-pi/automatically-running-at-boot)
 
 alexl@raspberrypi:~ \$ `sudo systemctl daemon-reload`
 
@@ -306,7 +319,7 @@ disable at startup:
 
 ## <span id="anchor-54"></span><span id="anchor-55"></span><span id="anchor-56"></span><span id="anchor-57"></span><span id="anchor-58"></span><span id="anchor-59"></span>optimizing power consumption
 
-The source of the following information is "Rob Lauer", see webpage:  [**https://blues.com/blog/tips-tricks-optimizing-raspberry-pi-power/**](https://blues.com/blog/tips-tricks-optimizing-raspberry-pi-power/)
+Credits: "Rob Lauer", see webpage:  [**https://blues.com/blog/tips-tricks-optimizing-raspberry-pi-power/**](https://blues.com/blog/tips-tricks-optimizing-raspberry-pi-power/)
 
 ### <span id="anchor-60"></span><span id="anchor-61"></span><span id="anchor-62"></span><span id="anchor-63"></span>turn off USB port
 
