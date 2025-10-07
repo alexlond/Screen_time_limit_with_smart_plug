@@ -5,23 +5,28 @@
   "port": 1883,
   "interval_minutes": 2,
   "default_daily_minutes": 125,
+  "add_errors_to_user1": false,
   "plugs": [
     {
+      "plug_id": 100001,
       "name": "plug_salotto",
       "topic_prefix": "tasmota_502E10",
       "active": true
     },
     {
+      "plug_id": 100002,
       "name": "plug_ale",
       "topic_prefix": "tasmota_502EAF",
-      "active": true
+      "active": false
     },
     {
+      "plug_id": 100003,
       "name": "plug3",
       "topic_prefix": "tasmota_502D76",
       "active": false
     },
     {
+      "plug_id": 100004,
       "name": "plug4",
       "topic_prefix": "tasmota_546D20",
       "active": false

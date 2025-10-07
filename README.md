@@ -1,20 +1,21 @@
-<span style="font-size:24px; font-weight:bold;">Screen Time Parental Control for tv/monitor</span>
+<span style="font-size:24px; font-weight:bold;">Screen Time Parental Control for tv/monitor with smart plugs and Telegram</span>
 
 <span style="font-size:20px; font-weight:bold;">📂 Table of Contents</span>
 
 - [About](#about)
 - [Telegram Bot and chat](#telegram-bot-and-chat)
-  - [🤖 Avalable commands](#-avalable-commands)
+  - [🤖 Available commands](#-available-commands)
   - [🤖 How to create a Telegram BOT](#-how-to-create-a-telegram-bot)
   - [📱 How to get the Chat ID](#-how-to-get-the-chat-id)
 - [Raspberry Pi Zero W](#raspberry-pi-zero-w)
   - [Prepare an SD card with a Raspberry Pi OS image (so you can boot it).](#prepare-an-sd-card-with-a-raspberry-pi-os-image-so-you-can-boot-it)
   - [Connecting to Raspberry Pi via SSH in Ms Windows](#connecting-to-raspberry-pi-via-ssh-in-ms-windows)
+  - [Set up the MQTT broker Mosquitto in the Raspberry Pi](#set-up-the-mqtt-broker-mosquitto-in-the-raspberry-pi)
   - [Create the “venv” Virtual environment for python](#create-the-venv-virtual-environment-for-python)
   - [Use venv](#use-venv)
   - [create a .env file with the credentials of the services](#create-a-env-file-with-the-credentials-of-the-services)
   - [create a "usersMQTT.json" file with the data of the users, e.g.:](#create-a-usersmqttjson-file-with-the-data-of-the-users-eg)
-  - [create a "calendarMQTT.json" file with the datime slots of the users, e.g.:](#create-a-calendarmqttjson-file-with-the-datime-slots-of-the-users-eg)
+  - [create a "calendarMQTT.json" file with the datetime slots of the users, e.g.:](#create-a-calendarmqttjson-file-with-the-datetime-slots-of-the-users-eg)
   - [Copy files from Ubuntu to Raspberry Pi](#copy-files-from-ubuntu-to-raspberry-pi)
   - [Copy files from Ms Windows to Raspberry Pi](#copy-files-from-ms-windows-to-raspberry-pi)
   - [Copy the file to the right folder from an ssh session connected ot the Raspberry Pi](#copy-the-file-to-the-right-folder-from-an-ssh-session-connected-ot-the-raspberry-pi)
@@ -28,35 +29,45 @@
 
 
 # <span id="anchor"></span>About 
-The televisions are powered by smart plugs. A smart plug is turned off after a certain daily limit of minutes has been reached or outside allowed time slots(30 mins each) ranging from 7:30 am to midnight. The cable of the tv is glued to the plug with a very small amount (so as not to impede heat dissipation) of fire-resistant glue for electrical parts. Disclaimer: in this document(and project) I am describing my implementation; I am not suggesting you do the same, safety must be assessed by a professional.
+The televisions are powered by four Tasmota plugs (Refoss P11) which support MQTT protocol. The smart plugs can be used by 5 Telegram users. A smart plug is turned off after a certain daily limit of minutes has been reached or outside allowed time slots(30 mins each) ranging from 7:30 am to midnight. 
+Disclaimer: in this document I am describing my implementation; I am not suggesting you do the same, safety must be assessed by a professional.
+The cable of each tv is glued to the plug with a very small amount (so as not to impede heat dissipation) of fire-resistant glue for electrical parts. 
 
-"TvTelegramBotMQTT.py" runs in a Raspberry Pi Zero W, four Tasmota plugs (Refoss P11) and uses the messaging app Telegram to communicate with the users.
+"TvTelegramBotMQTT.py" runs in a Raspberry Pi Zero W (which is also the MQTT broker), it manages  and uses the messaging app Telegram to communicate with the users.
 
-The script manages 4 plugs and five telegram Users. The first plug is associated by default to the user "Manoel", if another users starts the plug and then stops it, the plug is assigned again to "Manoel". Error minutes from any plugs are assigned to "Manoel" to decrease the risk of tampering. System uptime is shown to decrease the risk of tampering by turning off the Rasperry Pi.
+The first plug is associated by default to the user "user1", if another users starts the plug and then stops it, the plug is assigned again to "user1". Error minutes from any plugs are assigned to "user1" to decrease the risk of tampering. System uptime is shown to decrease the risk of tampering by turning off the Rasperry Pi.
 
-The script is run at boot via systemd, so you just have to connect the Rapsberry Pi Zero W to the power supply. 
+The script is run at boot via systemd, so you just have to connect the Raspberry Pi Zero W to the power supply. 
 
-A user can connect/disconnect from a plug in order to turn it on and use their minutes
+A user can connect/disconnect from a plug in order to turn it on and use their minutes.
 There is a maximum amount of minutes (available every day) for each user that resets after midnight. 
-The maximum amout of minutes and the time slots are saved to json files. If the smart plug is disconnected "error" minutes are added. 
+The maximum amount of minutes and the time slots are saved to json files. If the smart plug is disconnected "error" minutes are added. 
 
 Every two minutes the power delivered by the smart plug is read and if it is greater than the threshold "powered_on_min_watts" the available amounts of minutes is decreased. The threshold is useful because the television can consume power whilst in stand-by.
-Minutes can be added or subtracted durign the day but these changes are lost after midnight.
-Every half hour the bot writes to telegram its status. 
+Minutes can be added or subtracted during the day but these changes are lost after midnight.
 The timeslots can be set for each week day. 
 Every half hour the script posts to telegram a status message.
-
-There is also a simplified version of the script, "TvTelegramBot.py" which uses a Raspberry Pi Zero W, a Meross smart plug (MSS310R) and the messaging app Telegram to communicate with the user.
-
 # <span id="anchor-1"></span><span id="anchor-2"></span><span id="anchor-3"></span><span id="anchor-4"></span><span id="anchor-5"></span>Telegram Bot and chat
 
-## <span id="anchor-6"></span><span id="anchor-7"></span><span id="anchor-8"></span><span id="anchor-9"></span>🤖 Avalable commands
-the available commands are: addMinutes /help /pause /restart /kill /status /calendar /book /my_bookings /setDailyMinutes
-- `/addMinutes `followed by a positive or negative number of minutes to sum to the maximum number of minutes. The following day the maximum number of minutes is restored
-- `/status` gives you info about the state of the software and the available commands
-- `/book` to edit daily time slots
-- `/my_bookings` to see allowed time slots
-- `/setDailyMinutes `followed by the maximum number of allowed minutes 
+## <span id="anchor-6"></span><span id="anchor-7"></span><span id="anchor-8"></span><span id="anchor-9"></span>🤖 Available commands
+*Available Commands:*
+- `/start` - Register as user
+- `/listplugs` - List available plugs
+- `/startplug <plugname>` - start using a plug
+- `/stopplug [plugname]` - stop using current or given plug
+- `/status` - Show system status
+- `/help` - Show all commands
+- `/my_bookings` - Show your bookings
+
+*Admin Commands:*
+- `/addminutes <user_id|@username> <minutes>` - add minutes to the selected user (they are cleared after midnight)
+- `/setDailyMinutes <user_id|@username> <minutes>` - set the daily amount of minutes
+- `/timerMinutesHoliday <plugname> <minutes>` - set minutes of holidays (admin only)
+- `/book <user>` - Manage bookings
+- `/my_bookings [user_id|@username]` - admin may check others
+- `/calendar` - View weekly calendar
+- `/activate <action> <plug>` - Enable/disable plugs
+- `/plug <on|off> <plug>` - Control plugs
 ## <span id="anchor-6"></span><span id="anchor-7"></span><span id="anchor-8"></span><span id="anchor-9"></span>🤖 How to create a Telegram BOT
 
 Open Telegram and search for @BotFather
@@ -132,6 +143,12 @@ Once connected, use the following command if you want to disconnect:
 `exit`
 
 If you want to restart the raspberry: `sudo reboot`
+## <span id="anchor-30"></span><span id="anchor-31"></span><span id="anchor-32"></span><span id="anchor-33"></span><span id="anchor-34"></span><span id="anchor-35"></span>Set up the MQTT broker Mosquitto in the Raspberry Pi
+`sudo apt update`
+
+`sudo apt install mosquitto mosquitto-clients`
+
+`sudo systemctl enable mosquitto`
 
 ## <span id="anchor-30"></span><span id="anchor-31"></span><span id="anchor-32"></span><span id="anchor-33"></span><span id="anchor-34"></span><span id="anchor-35"></span>Create the “venv” Virtual environment for python
 
@@ -142,6 +159,7 @@ Create a virtual environment in the folder “venvTv”: `python3 -m venv venvTv
 navigate to the bin subfolder: `cd venvTv/bin`
 
 activate the virtual environment: `source activate`
+You should now see (venvTv) at the start of your command prompt.
 
 ## <span id="anchor-36"></span><span id="anchor-37"></span><span id="anchor-38"></span><span id="anchor-39"></span><span id="anchor-40"></span><span id="anchor-41"></span>Use venv
 
@@ -154,9 +172,6 @@ Modules installed with pip will be placed in the local “venv” folders
 
 (venvTv) alexl@raspberrypi:~ \$ `pip install python-telegram-bot`
 
-(venvTv) alexl@raspberrypi:~ \$ `pip install meross_iot==0.4.8.0`
-installs the library to manage meross devices
-
 (venvTv) alexl@raspberrypi:~ \$ `pip install dotenv`
 
 (venvTv) alexl@raspberrypi:~ \$ `pip install paho-mqtt`
@@ -166,93 +181,104 @@ install the latest version compatible with Meross
 Install the library to have async MQTT
 
 ## <span id="anchor-48"></span><span id="anchor-49"></span><span id="anchor-50"></span><span id="anchor-51"></span><span id="anchor-52"></span><span id="anchor-53"></span>create a .env file with the credentials of the services
-The .env files contain the IDs, passwords and tokens used to access the services.
+The .env files contain the IDs, passwords and tokens used to access the services. The .env file must be created in the same folder ("tv") as the python script. The entry "AUTHORIZED_USER_ID" is the ID of the user who can send commands to the telegram bot.
 
-- AUTHORIZED_USER_ID is the ID of the user who can send commands to the telegram bot
-- "email" and "password" are the credentials that you use in the Meross App
+To create the file you can run `nano.env`
 
-.env file sample:
-<pre>TELEGRAM_BOT_TOKEN=nnnnnnnnnn:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-TELEGRAM_BOT_TOKEN_MQTT=nnnnnnnnnn:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-EMAIL = "email_registered_with_meross@provider.com"
-PASSWORD = "password_registered_with_meross"
-AUTHORIZED_USER_ID = nnnnnnnnnn
-AUTHORIZED_USER_ID_MQTT = 
-chatID='-nnnnnnnnnn'
-chatID_MQTT='-nnnnnnnnnn'</pre>
+Paste in your credentials (replace the example values with your own):
+<pre>TELEGRAM_BOT_TOKEN_MQTT=nnnnnnnnnn:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+AUTHORIZED_USER_ID_MQTT = nnnnnnnnnn
+chatID_MQTT='-nnnnnnnnnn'
+user1_id = "nnnnnn"
+plug1_id = "nnnnnn"</pre>
+Press Ctrl+O to save, then Ctrl+X to exit.
 ## <span id="anchor-48"></span><span id="anchor-49"></span><span id="anchor-50"></span><span id="anchor-51"></span><span id="anchor-52"></span><span id="anchor-53"></span>create a "usersMQTT.json" file with the data of the users, e.g.:
+You can use nano or any text editor to create this file in your project directory.
+Copy the sample content below and edit as needed
 <pre>{
   "100001": {
     "user_id": 100001,
-    "username": "Manoel",
+    "username": "user1",
+    "default_minutes": 125,
     "initial_minutes": 125,
-    "remaining_minutes": 125
+    "remaining_minutes": 125,
+    "error_minutes": 0
   },
   "100002": {
     "user_id": 100002,
-    "username": "Alex",
+    "username": "user2",
+    "default_minutes": 125,
     "initial_minutes": 125,
-    "remaining_minutes": 125
+    "remaining_minutes": 125,
+    "error_minutes": 0
   },
   "100003": {
     "user_id": 100003,
     "username": "user3",
+    "default_minutes": 125,
     "initial_minutes": 125,
-    "remaining_minutes": 125
+    "remaining_minutes": 125,
+    "error_minutes": 0
   },
   "100004": {
     "user_id": 100004,
     "username": "user4",
+    "default_minutes": 125,
     "initial_minutes": 125,
-    "remaining_minutes": 125
+    "remaining_minutes": 125,
+    "error_minutes": 0
   },
   "100005": {
     "user_id": 100005,
     "username": "user5",
+    "default_minutes": 125,
     "initial_minutes": 125,
-    "remaining_minutes": 125
+    "remaining_minutes": 125,
+    "error_minutes": 0
   }
 }</pre>
-## <span id="anchor-48"></span><span id="anchor-49"></span><span id="anchor-50"></span><span id="anchor-51"></span><span id="anchor-52"></span><span id="anchor-53"></span>create a "calendarMQTT.json" file with the datime slots of the users, e.g.:
+## <span id="anchor-48"></span><span id="anchor-49"></span><span id="anchor-50"></span><span id="anchor-51"></span><span id="anchor-52"></span><span id="anchor-53"></span>create a "calendarMQTT.json" file with the datetime slots of the users, e.g.:
 <pre>{
   "Mon": {
     "08:00": {
       "user_id": 100001,
-      "username": "Manoel",
+      "username": "user1",
       "booked_at": "2025-09-19T23:05:36.284277"
     },
     "08:30": {
       "user_id": 100001,
-      "username": "Manoel",
+      "username": "user1",
       "booked_at": "2025-09-19T23:05:36.284889"
     },
     "09:00": {
       "user_id": 100001,
-      "username": "Manoel",
+      "username": "user1",
       "booked_at": "2025-09-19T23:05:36.289401"
     }
   },
   "Tue": {
     "20:00": {
       "user_id": 100001,
-      "username": "Manoel",
+      "username": "user1",
       "booked_at": "2025-09-19T23:06:41.615729"
     },
     "20:30": {
       "user_id": 100001,
-      "username": "Manoel",
+      "username": "user1",
       "booked_at": "2025-09-19T23:06:41.616601"
     }
   }
 }</pre>
 ## <span id="anchor-42"></span><span id="anchor-43"></span><span id="anchor-44"></span><span id="anchor-45"></span><span id="anchor-46"></span><span id="anchor-47"></span>Copy files from Ubuntu to Raspberry Pi
-From terminal, without being connected through “ssh”:
+OOpen a terminal on your computer (not via SSH on the Pi) and run:
 
 alex@alex:~/Downloads$ `scp /home/alex/Documents/pythonProjects/Screen_time_limit_with_smart_plug/TvTelegramBotMQTT.py alexl@raspberrypi:tv
 TvTelegramBotMQTT.py `
 
-alex@alex:~/Downloads$ `scp /home/alex/Documents/pythonProjects/Screen_time_limit_with_smart_plug/.env alexl@raspberrypi:tv
-.env `
+In the previous command replace "/home/alex/Documents/pythonProjects/Screen_time_limit_with_smart_plug/TvTelegramBotMQTT.py" with the path to your file, and "alexl" with your Pi username.
+
+alex@alex:~/Downloads$ `scp /home/alexl/Documents/pythonProjects/screen_time_limit_with_smart_plug/.env alexl@raspberrypi:/tmp/
+ssh alexl@raspberrypi "sudo install -m 644 /tmp/.env /lib/systemd/system/"`
 
 alex@alex:~/Downloads$ `scp /home/alex/Documents/pythonProjects/Screen_time_limit_with_smart_plug/calendarMQTT.json alexl@raspberrypi:tv
 calendarMQTT.json`
@@ -265,7 +291,7 @@ tvTelegramMQTT.service`
 
 ## <span id="anchor-42"></span><span id="anchor-43"></span><span id="anchor-44"></span><span id="anchor-45"></span><span id="anchor-46"></span><span id="anchor-47"></span>Copy files from Ms Windows to Raspberry Pi
 
-From poweshell, without being connected through “ssh”:
+From PowerShell, without being connected through “ssh”:
 
 > PS C:\Users\alexl\> `scp "C:\Users\alexl\OneDrive\Documenti\pythonProjects\parental\TvTelegramBotMQTT.py" alexl@raspberrypi:tv`
 
@@ -388,7 +414,7 @@ dtparam=pwr_led_activelow=off</pre>
 
 file to be edited: `sudo nano /boot/firmware/config.txt`
 
-Modifiy in :`arm_boost=0`
+Modify in :`arm_boost=0`
 
 Add below `[all]` :
 
@@ -396,4 +422,4 @@ Add below `[all]` :
 
 arm_freq_max=600</pre>
 
-comment the row: `dtparam=audio=on`
+comment the linedtparam=audio=on`
