@@ -31,7 +31,7 @@
 # <span id="anchor"></span>About 
 The televisions are powered by four Tasmota plugs (Refoss P11) which support MQTT protocol. The smart plugs can be used by 5 Telegram users. A smart plug is turned off after a certain daily limit of minutes has been reached or outside allowed time slots(30 mins each) ranging from 7:30 am to midnight. 
 Disclaimer: in this document I am describing my implementation; I am not suggesting you do the same, safety must be assessed by a professional.
-The cable of each tv is glued to the plug with a very small amount (so as not to impede heat dissipation) of fire-resistant glue for electrical parts. 
+The cable of each tv is glued to the smart plug with a very small amount (so as not to impede heat dissipation) of fire-resistant glue for electrical parts. 
 
 "TvTelegramBotMQTT.py" runs in a Raspberry Pi Zero W (which is also the MQTT broker), it manages  and uses the messaging app Telegram to communicate with the users.
 
