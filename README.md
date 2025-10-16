@@ -18,7 +18,7 @@
   - [create a "calendarMQTT.json" file with the datetime slots of the users, e.g.:](#create-a-calendarmqttjson-file-with-the-datetime-slots-of-the-users-eg)
   - [Copy files from Ubuntu to Raspberry Pi](#copy-files-from-ubuntu-to-raspberry-pi)
   - [Copy files from Ms Windows to Raspberry Pi](#copy-files-from-ms-windows-to-raspberry-pi)
-  - [Copy the file to the right folder from an ssh session connected ot the Raspberry Pi](#copy-the-file-to-the-right-folder-from-an-ssh-session-connected-ot-the-raspberry-pi)
+    - [Copy the file to the right folder from an ssh session connected ot the Raspberry Pi](#copy-the-file-to-the-right-folder-from-an-ssh-session-connected-ot-the-raspberry-pi)
   - [Use systemD to start the script at boot:](#use-systemd-to-start-the-script-at-boot)
   - [optimizing power consumption](#optimizing-power-consumption)
     - [turn off USB port](#turn-off-usb-port)
@@ -202,6 +202,7 @@ Copy the sample content below and edit as needed
     "default_minutes": 125,
     "initial_minutes": 125,
     "remaining_minutes": 125,
+    "used_minutes": 0,
     "error_minutes": 0
   },
   "100002": {
@@ -210,6 +211,7 @@ Copy the sample content below and edit as needed
     "default_minutes": 125,
     "initial_minutes": 125,
     "remaining_minutes": 125,
+    "used_minutes": 0,
     "error_minutes": 0
   },
   "100003": {
@@ -218,6 +220,7 @@ Copy the sample content below and edit as needed
     "default_minutes": 125,
     "initial_minutes": 125,
     "remaining_minutes": 125,
+    "used_minutes": 0,
     "error_minutes": 0
   },
   "100004": {
@@ -226,6 +229,7 @@ Copy the sample content below and edit as needed
     "default_minutes": 125,
     "initial_minutes": 125,
     "remaining_minutes": 125,
+    "used_minutes": 0,
     "error_minutes": 0
   },
   "100005": {
@@ -234,6 +238,7 @@ Copy the sample content below and edit as needed
     "default_minutes": 125,
     "initial_minutes": 125,
     "remaining_minutes": 125,
+    "used_minutes": 0,
     "error_minutes": 0
   }
 }</pre>
@@ -270,15 +275,14 @@ Copy the sample content below and edit as needed
   }
 }</pre>
 ## <span id="anchor-42"></span><span id="anchor-43"></span><span id="anchor-44"></span><span id="anchor-45"></span><span id="anchor-46"></span><span id="anchor-47"></span>Copy files from Ubuntu to Raspberry Pi
-OOpen a terminal on your computer (not via SSH on the Pi) and run:
+Open a terminal on your computer (not via SSH on the Pi) and run:
 
 alex@alex:~/Downloads$ `scp /home/alex/Documents/pythonProjects/Screen_time_limit_with_smart_plug/TvTelegramBotMQTT.py alexl@raspberrypi:tv
 TvTelegramBotMQTT.py `
 
 In the previous command replace "/home/alex/Documents/pythonProjects/Screen_time_limit_with_smart_plug/TvTelegramBotMQTT.py" with the path to your file, and "alexl" with your Pi username.
 
-alex@alex:~/Downloads$ `scp /home/alexl/Documents/pythonProjects/screen_time_limit_with_smart_plug/.env alexl@raspberrypi:/tmp/
-ssh alexl@raspberrypi "sudo install -m 644 /tmp/.env /lib/systemd/system/"`
+alex@alex:~/Downloads$ `scp /home/alexl/Documents/pythonProjects/screen_time_limit_with_smart_plug/.env alexl@raspberrypi:tv`
 
 alex@alex:~/Downloads$ `scp /home/alex/Documents/pythonProjects/Screen_time_limit_with_smart_plug/calendarMQTT.json alexl@raspberrypi:tv
 calendarMQTT.json`
@@ -286,8 +290,9 @@ calendarMQTT.json`
 alex@alex:~/Downloads$ `scp /home/alex/Documents/pythonProjects/Screen_time_limit_with_smart_plug/configMQTT.json alexl@raspberrypi:tv
 configMQTT.json`
 
-alex@alex:~/Downloads$ `scp /home/alex/Documents/pythonProjects/Screen_time_limit_with_smart_plug/tvTelegramMQTT.service alexl@raspberrypi:tv
-tvTelegramMQTT.service`
+alex@alex:~/Downloads$ `scp /home/alex/Documents/pythonProjects/Screen_time_limit_with_smart_plug/tvTelegramMQTT.service alexl@raspberrypi:/tmp/`
+
+alex@alex:~/Downloads$ `ssh alexl@raspberrypi "sudo install -m 644 /tmp/tvTelegramMQTT.service /lib/systemd/system/"`
 
 ## <span id="anchor-42"></span><span id="anchor-43"></span><span id="anchor-44"></span><span id="anchor-45"></span><span id="anchor-46"></span><span id="anchor-47"></span>Copy files from Ms Windows to Raspberry Pi
 
@@ -305,8 +310,7 @@ From PowerShell, without being connected through “ssh”:
 
 alexl@raspberrypi:~ \$ `exit`
 
-## <span id="anchor-42"></span><span id="anchor-43"></span><span id="anchor-44"></span><span id="anchor-45"></span><span id="anchor-46"></span><span id="anchor-47"></span>Copy the file to the right folder from an ssh session connected ot the Raspberry Pi
-
+### <span id="anchor-68"></span><span id="anchor-69"></span><span id="anchor-70"></span><span id="anchor-71"></span><span id="anchor-72"></span><span id="anchor-73"></span><span id="anchor-74"></span>Copy the file to the right folder from an ssh session connected ot the Raspberry Pi
 - alexl@raspberrypi:~ \$ `sudo cp TvTelegramMQTT.service /lib/systemd/system/tvTelegramMQTT.service`
 
 Giving rights to the file:

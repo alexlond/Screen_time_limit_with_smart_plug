@@ -573,9 +573,11 @@ class SystemManager:
                             # if user exhausted
                             if user.remaining_minutes <= 0 or (user.user_id == user1_id and user.remaining_minutes - user.error_minutes<=0):                                
                                 await plug.send_command("OFF")
-                                if plug.state:
+                                if plug.state or power > 0:
                                     await broadcast_message(bot_application, f"🔌 {plug.name} turned OFF because {user.username} ran out of minutes.")
                                     plug.state = False
+                            if user.remaining_minutes == 5 or user.remaining_minutes == 6 or (user.user_id == user1_id and (user.remaining_minutes - user.error_minutes == 5 or user.remaining_minutes - user.error_minutes == 6)):
+                                await broadcast_message(bot_application, f"⏳ {user.username}, you have only 5 minutes left!") #approximation to 5 minutes
                         else:
                             # user not booked -> turn off plug and notify admin
                             await plug.send_command("OFF")
