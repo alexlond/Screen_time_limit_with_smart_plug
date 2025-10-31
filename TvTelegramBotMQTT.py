@@ -312,11 +312,12 @@ class User:
             self.used_minutes = 0  # <-- Reset used_minutes
 
 class Plug:
-    def __init__(self, name: str, topic_prefix: str, broker: str, port: int = 1883, active: bool = True):
+    def __init__(self, name: str, topic_prefix: str, broker: str, port: int = 1883, active: bool = True, plug_id: Optional[int] = None):
         self.name = name
         self.topic_prefix = topic_prefix
         self.broker = broker
         self.port = port
+        self.plug_id = plug_id  # Add this line
         self.topic_cmd = f"cmnd/{topic_prefix}/POWER"
         self.topic_tele = f"cmnd/{topic_prefix}/TelePeriod"
         self.topic_sensor = f"tele/{topic_prefix}/SENSOR"
@@ -436,7 +437,8 @@ class SystemManager:
             name = p["name"]
             topic_prefix = p["topic_prefix"]
             active = p.get("active", True)
-            self.plugs[name] = Plug(name, topic_prefix, self.broker, self.port, active)
+            plug_id = p.get("plug_id", None)  # Get plug_id from config
+            self.plugs[name] = Plug(name, topic_prefix, self.broker, self.port, active, plug_id)
 
         if not self.plugs:
             # fallback default plug
@@ -790,7 +792,7 @@ async def stopplug_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             plug = user.active_plug
             user.detach_plug()
             # reassign user1
-            if plug.plug_id == plug1_id and user.user_id == user1_id:
+            if plug.plug_id == plug1_id and user.user_id != user1_id:
                 user1=None
                 for u in manager.users.values():
                     if u.user_id and u.user_id == user1_id:
@@ -1015,7 +1017,7 @@ async def show_time_slots_safe(update: Update, context: ContextTypes.DEFAULT_TYP
 
 async def handle_multiple_booking(update: Update, context: ContextTypes.DEFAULT_TYPE, day_name: str, target_user_id: int, time_slots: list):
     """Handle booking multiple time slots at once"""
-    target_user = manager.get_user_by_id(target_user_id)
+    target_user = manager.get_user_by_telegram(target_user_id)
     if not target_user:
         await update.callback_query.edit_message_text("User not found")
         return
