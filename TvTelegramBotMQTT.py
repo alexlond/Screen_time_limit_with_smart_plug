@@ -100,7 +100,7 @@ commands_help_text = [
     "/start - Register as user",
     "/listplugs - List available plugs",
     "/startplug <plugname> - start using a plug",
-    "/stopplug [plugname] - stop using current or given plug",
+    "/stopplug [plugname] - stop using current plug",
     "/status - Show system status",
     "/help - Show all commands",
     "/my_bookings - Show your bookings",
@@ -113,7 +113,9 @@ commands_help_text = [
     "/my_bookings [user_id|@username] - admin may check others",
     "/calendar - View weekly calendar",
     "/activate <action> <plug> - Enable/disable plugs",
-    "/plug <on|off> <plug> - Control plugs"
+    "/plug <on|off> <plug> - Control plugs",
+    "/startplug <plugname> <user> - make a user start using a plug",
+    "/stopplug [plugname] - stop using any plug"
 ]
 
 async def sleep_async(seconds) -> None:
@@ -750,6 +752,23 @@ async def startplug_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not plug:
         await update.message.reply_text(f"Plug '{plugname}' not found. Known plugs: {', '.join(manager.list_plugs())}")
         return
+    if len(context.args) == 2: 
+        if not is_authorized(update.effective_user.id):
+            await update.message.reply_text("You are not authorized to use this command.")
+            return
+        target_user_arg = context.args[1]
+        # Try to find user by id or username
+        target_user = None
+
+        for u in manager.users.values():
+            if u.username == target_user_arg:
+                target_user = u
+                break
+        if not target_user:
+            await update.message.reply_text(f"User '{target_user_arg}' not found.")
+            return
+        user = target_user
+    #if there is another user on the plug, detach them
     for u in manager.users.values():
         if u.active_plug == plug and u.user_id != user.user_id:
             u.detach_plug()
@@ -757,8 +776,8 @@ async def startplug_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     manager.persist_users()
     # Turn on the plug physically
     await plug.send_command("ON")
-    plug.state = True;
-    await update.message.reply_text(f"You're now attached to plug {plugname} and turned it ON. While the plug draws power > {manager.power_threshold}W your minutes will be consumed (only during your booked slots).")
+    plug.state = True
+    await update.message.reply_text(f"user {user.username} is now attached to plug {plugname} and turned it ON. While the plug draws power > {manager.power_threshold}W your minutes will be consumed (only during your booked slots).")
 
 # admin-only: timerMinutesHoliday (only admin may use)
 async def timerMinutesHoliday_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -816,7 +835,10 @@ async def stopplug_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not plug:
         await update.message.reply_text(f"Plug '{plugname}' not found.")
         return
-    if plug.user and plug.user.user_id == user.user_id:
+    if not plug.user:
+        await update.message.reply_text(f"Plug '{plugname}' has no user.")
+        return
+    if plug.user.user_id == user.user_id:
         user.detach_plug()
 
         # reassign user1
@@ -833,12 +855,36 @@ async def stopplug_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         manager.persist_users()
         # Turn off the plug physically
-        await plug.send_command("OFF")
-        plug.state = False
-        await update.message.reply_text(f"Stopped using plug {plugname} and turned it OFF.")
+        if not plug.user:
+            await plug.send_command("OFF")
+            plug.state = False
+            await update.message.reply_text(f"Stopped using plug {plugname} and turned it OFF.")
+        else:
+            await update.message.reply_text(f"Stopped using plug {plugname}.")
     else:
-        await update.message.reply_text(f"You are not the current user of plug {plugname}.")
-
+        if not is_authorized(update.effective_user.id):
+            await update.message.reply_text(f"You are not the current user of plug {plugname} and you are not an admin.")
+            return        
+        user = plug.user
+        user.detach_plug()
+        if user.user_id != user1_id and plug.plug_id == plug1_id:
+            user1=None
+            for u in manager.users.values():
+                if u.user_id and u.user_id == user1_id:
+                    user1 = u
+                    break
+            if user1:
+                first_plug = next(iter(manager.plugs.values()))
+                user1.attach_plug(first_plug)
+                logger.info(f"{user1.username} attached to plug {first_plug.name} by default")
+        manager.persist_users()
+        # Turn off the plug physically
+        if not plug.user:
+            await plug.send_command("OFF")
+            plug.state = False
+            await update.message.reply_text(f"Admin stopped user '{user.username}' from using plug {plugname} and turned it OFF.")
+        else:
+            await update.message.reply_text(f"Admin stopped user '{user.username}' from using plug {plugname}, the plug has been assigned to {plug.user.username}.")
 
 # admin-only: addminutes (only admin may use)
 async def addminutes_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
