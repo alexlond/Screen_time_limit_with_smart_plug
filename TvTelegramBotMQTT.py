@@ -587,7 +587,11 @@ class SystemManager:
                             await plug.send_command("OFF")
                             plug.state = False
                             await broadcast_message(bot_application, f"⛔ {user.username} tried to use {plug.name} outside booking time. Plug OFF.")
-                    # else nothing to do
+                    elif user is None and power > self.power_threshold:
+                        # plug is powered on but no user attached
+                        await plug.send_command("OFF")
+                        plug.state = False
+                        await broadcast_message(bot_application, f"⚠️ {plug.name} is ON but no user is attached. Turning OFF.")
 
                 if error_in_any_plug and self.add_errors_to_user1:
                     self.users[user1_id].error_minutes += interval  # example: increment error minutes for user with id user1_id
