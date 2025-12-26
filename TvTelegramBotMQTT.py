@@ -1067,7 +1067,8 @@ async def show_time_slots_safe(update: Update, context: ContextTypes.DEFAULT_TYP
 
 async def handle_multiple_booking(update: Update, context: ContextTypes.DEFAULT_TYPE, day_name: str, target_user_id: int, time_slots: list):
     """Handle booking multiple time slots at once"""
-    target_user = manager.get_user_by_telegram(target_user_id)
+    #target_user = manager.get_user_by_telegram(target_user_id)
+    target_user = manager.get_user_by_id(target_user_id)
     if not target_user:
         await update.callback_query.edit_message_text("User not found")
         return
