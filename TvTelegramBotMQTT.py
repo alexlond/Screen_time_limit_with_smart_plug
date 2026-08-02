@@ -147,6 +147,8 @@ def save_json(path: str, data):
     except Exception as e:
         logger.error("Error saving %s: %s", path, e)
 
+config = load_json_if_exists(CONFIG_FILE, DEFAULT_CONFIG)
+
 # -------------------
 # WeeklyCalendar class
 # -------------------
@@ -645,11 +647,11 @@ class SystemManager:
         if self._bg_task:
             self._bg_task.cancel()
 
-
 # -------------------
 # Helpers
 # -------------------
 calendar = WeeklyCalendar()
+manager = SystemManager(config, calendar)
 
 def is_authorized(user_id: int) -> bool:
     return AUTHORIZED_USER_ID is not None and int(user_id) == int(AUTHORIZED_USER_ID)
@@ -1295,7 +1297,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await query.answer("Unknown action", show_alert=True)
 
-
 async def listplugs_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Available plugs: " + ", ".join(manager.list_plugs()))
 
@@ -1324,7 +1325,6 @@ async def plug_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(f"Sent OFF to {plugname}")
     else:
         await update.message.reply_text("Action must be 'on' or 'off'.")
-
 
 # admin-only: activate/deactivate plug
 async def admin_activate_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1358,9 +1358,6 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # -------------------
 # Startup & main
 # -------------------
-config = load_json_if_exists(CONFIG_FILE, DEFAULT_CONFIG)
-manager = SystemManager(config, calendar)
-
 
 def format_uptime(seconds):
     """Format uptime in a human-readable way"""

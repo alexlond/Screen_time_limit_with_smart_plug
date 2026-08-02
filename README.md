@@ -128,10 +128,6 @@ style="width:5.6457in;height:7.1252in" />
 
 <img src="docs/readme_pictures/os_SSH_enable.png"
 style="width:5.6354in;height:6.8957in" />
-
-In Raspberry Pi Zero W I have created the folders “tv” for the script
-and "venvTv" for the Virtual environment
-
 ## <span id="anchor-24"></span><span id="anchor-25"></span><span id="anchor-26"></span><span id="anchor-27"></span><span id="anchor-28"></span><span id="anchor-29"></span>Connecting to Raspberry Pi via SSH in Ms Windows
 
 `ssh alexl@raspberrypi` or, less securely: `ssh -o
@@ -154,11 +150,18 @@ If you want to restart the raspberry: `sudo reboot`
 
 Connecting to the Raspberry pi via “ssh” (see previous chapter)
 
+Create the folder temp for temporary files: `mkdir temp`
+
+Create the folder “tv” for the script: `mkdir tv`
+
+Create the folder venvTv for the script: `mkdir venvTv`
+
 Create a virtual environment in the folder “venvTv”: `python3 -m venv venvTv`
 
 navigate to the bin subfolder: `cd venvTv/bin`
 
 activate the virtual environment: `source activate`
+
 You should now see (venvTv) at the start of your command prompt.
 
 ## <span id="anchor-36"></span><span id="anchor-37"></span><span id="anchor-38"></span><span id="anchor-39"></span><span id="anchor-40"></span><span id="anchor-41"></span>Use venv
@@ -174,11 +177,10 @@ Modules installed with pip will be placed in the local “venv” folders
 
 (venvTv) alexl@raspberrypi:~ \$ `pip install dotenv`
 
-(venvTv) alexl@raspberrypi:~ \$ `pip install paho-mqtt`
-install the latest version compatible with Meross
-
 (venvTv) alexl@raspberrypi:~ \$ `pip install aiomqtt`
 Install the library to have async MQTT
+
+to deactivate the virtual environment use the command: `deactivate`
 
 ## <span id="anchor-48"></span><span id="anchor-49"></span><span id="anchor-50"></span><span id="anchor-51"></span><span id="anchor-52"></span><span id="anchor-53"></span>create a .env file with the credentials of the services
 The .env files contain the IDs, passwords and tokens used to access the services. The .env file must be created in the same folder ("tv") as the python script. The entry "AUTHORIZED_USER_ID" is the ID of the user who can send commands to the telegram bot.
@@ -277,22 +279,25 @@ Copy the sample content below and edit as needed
 ## <span id="anchor-42"></span><span id="anchor-43"></span><span id="anchor-44"></span><span id="anchor-45"></span><span id="anchor-46"></span><span id="anchor-47"></span>Copy files from Ubuntu to Raspberry Pi
 Open a terminal on your computer (not via SSH on the Pi) and run:
 
-alex@alex:~/Downloads$ `scp /home/alex/Documents/pythonProjects/Screen_time_limit_with_smart_plug/TvTelegramBotMQTT.py alexl@raspberrypi:tv
+alex@alex:~$ `scp /home/alex/Documents/pythonProjects/Screen_time_limit_with_smart_plug/TvTelegramBotMQTT.py alexl@raspberrypi:tv
 TvTelegramBotMQTT.py `
 
 In the previous command replace "/home/alex/Documents/pythonProjects/Screen_time_limit_with_smart_plug/TvTelegramBotMQTT.py" with the path to your file, and "alexl" with your Pi username.
 
-alex@alex:~/Downloads$ `scp /home/alexl/Documents/pythonProjects/screen_time_limit_with_smart_plug/.env alexl@raspberrypi:tv`
+alex@alex:~$ `scp /home/alexl/Documents/pythonProjects/screen_time_limit_with_smart_plug/.env alexl@raspberrypi:tv`
 
-alex@alex:~/Downloads$ `scp /home/alex/Documents/pythonProjects/Screen_time_limit_with_smart_plug/calendarMQTT.json alexl@raspberrypi:tv
+alex@alex:~$ `scp /home/alex/Documents/pythonProjects/Screen_time_limit_with_smart_plug/calendarMQTT.json alexl@raspberrypi:tv
 calendarMQTT.json`
 
-alex@alex:~/Downloads$ `scp /home/alex/Documents/pythonProjects/Screen_time_limit_with_smart_plug/configMQTT.json alexl@raspberrypi:tv
+alex@alex:~$ `scp /home/alex/Documents/pythonProjects/Screen_time_limit_with_smart_plug/configMQTT.json alexl@raspberrypi:tv
 configMQTT.json`
 
-alex@alex:~/Downloads$ `scp /home/alex/Documents/pythonProjects/Screen_time_limit_with_smart_plug/tvTelegramMQTT.service alexl@raspberrypi:/tmp/`
+alex@alex:~$ `scp /home/alex/Documents/pythonProjects/Screen_time_limit_with_smart_plug/configMQTT.json alexl@raspberrypi:tv
+usersMQTT.json`
 
-alex@alex:~/Downloads$ `ssh alexl@raspberrypi "sudo install -m 644 /tmp/tvTelegramMQTT.service /lib/systemd/system/"`
+alex@alex:~$ `scp /home/alex/Documents/pythonProjects/Screen_time_limit_with_smart_plug/tvTelegramMQTT.service alexl@raspberrypi:temp`
+
+alex@alex:~$ `ssh alexl@raspberrypi "sudo install -m 644 /home/alexl/temp/tvTelegramMQTT.service /etc/systemd/system/"`
 
 ## <span id="anchor-42"></span><span id="anchor-43"></span><span id="anchor-44"></span><span id="anchor-45"></span><span id="anchor-46"></span><span id="anchor-47"></span>Copy files from Ms Windows to Raspberry Pi
 
@@ -306,16 +311,16 @@ From PowerShell, without being connected through “ssh”:
 
 > PS C:\Users\alexl\> `scp "C:\Users\alexl\OneDrive\Documenti\pythonProjects\parental\configMQTT.json" alexl@raspberrypi:tv`
 
-> PS C:\Users\alexl\> `scp "C:\Users\alexl\OneDrive\Documenti\pythonProjects\parental\tvTelegramMQTT.service" alexl@raspberrypi:tvTelegramMQTT.service`
+> PS C:\Users\alexl\> `scp "C:\Users\alexl\OneDrive\Documenti\pythonProjects\parental\tvTelegramMQTT.service" alexl@raspberrypi:temp`
 
 alexl@raspberrypi:~ \$ `exit`
 
 ### <span id="anchor-68"></span><span id="anchor-69"></span><span id="anchor-70"></span><span id="anchor-71"></span><span id="anchor-72"></span><span id="anchor-73"></span><span id="anchor-74"></span>Copy the file to the right folder from an ssh session connected ot the Raspberry Pi
-- alexl@raspberrypi:~ \$ `sudo cp TvTelegramMQTT.service /lib/systemd/system/tvTelegramMQTT.service`
+- alexl@raspberrypi:~ \$ `sudo cp /temp/TvTelegramMQTT.service /etc/systemd/system/tvTelegramMQTT.service`
 
 Giving rights to the file:
 
-- alexl@raspberrypi:~ \$ `sudo chmod 644 /lib/systemd/system/tvTelegramMQTT.service`
+- alexl@raspberrypi:~ \$ `sudo chmod 644 /etc/systemd/system/tvTelegramMQTT.service`
 
 It is a good idea to check if the files has been copied by going into the folders and listing their content
 
@@ -323,29 +328,31 @@ It is a good idea to check if the files has been copied by going into the folder
 
 Credits: [**https://learn.adafruit.com/python-virtual-environment-usage-on-raspberry-pi/automatically-running-at-boot**](https://learn.adafruit.com/python-virtual-environment-usage-on-raspberry-pi/automatically-running-at-boot)
 
+Connect to the Raspberry pi via “ssh” then execute the followng commands:
+
 alexl@raspberrypi:~ \$ `sudo systemctl daemon-reload`
 
-alexl@raspberrypi:~ \$ `sudo systemctl enable TvTelegramMQTT`
+alexl@raspberrypi:~ \$ `sudo systemctl enable tvTelegramMQTT.service`
 
-alexl@raspberrypi:~ \$ `sudo systemctl start TvTelegramMQTT`
+alexl@raspberrypi:~ \$ `sudo systemctl start tvTelegramMQTT`
 
 to check the status:
 
-- alexl@raspberrypi:~ \$ `systemctl status TvTelegramMQTT.service`
+- alexl@raspberrypi:~ \$ `systemctl status tvTelegramMQTT.service`
 
 to exit the status press “q”
 
 to reboot:
 
-- alexl@raspberrypi:~ \$ `systemctl status TvTelegramMQTT.service`
+- alexl@raspberrypi:~ \$ `systemctl status tvTelegramMQTT.service`
 
 to stop the service:
 
-- alexl@raspberrypi:~ \$ `sudo systemctl stop TvTelegramMQTT`
+- alexl@raspberrypi:~ \$ `sudo systemctl stop tvTelegramMQTT`
 
 disable at startup:
 
-- alexl@raspberrypi:~ \$ `sudo systemctl disable TvTelegramMQTT`
+- alexl@raspberrypi:~ \$ `sudo systemctl disable tvTelegramMQTT`
 
 ## <span id="anchor-54"></span><span id="anchor-55"></span><span id="anchor-56"></span><span id="anchor-57"></span><span id="anchor-58"></span><span id="anchor-59"></span>optimizing power consumption
 
@@ -384,12 +391,12 @@ these ports which will give a small improvement to battery life (~20mA).
 Type the following into the terminal to disable power to the HDMI ports.
 As soon as you press enter it will be disabled.
 
-- `sudo /opt/vc/bin/tvservice -o`
+- `vcgencmd display_power 0`
 
 If you want to re-enable HDMI connection simply type the following into
 the terminal.
 
-- `sudo /opt/vc/bin/tvservice -p`
+- `vcgencmd display_power 1`
 
 ### <span id="anchor-75"></span><span id="anchor-76"></span><span id="anchor-77"></span><span id="anchor-78"></span><span id="anchor-79"></span><span id="anchor-80"></span>Disable On-Board LEDs
 
@@ -401,17 +408,14 @@ them. It also means a running Raspberry Pi will appear to be not powered
 which could make for some sweet stealthy spy electronic projects. So by
 disabling power to the LEDs you will gain a small improvement to overall
 battery life (\<2mA potential saving per LED). To do this edit
-the /boot/config.txt file and add the following lines (when using a
-Raspberry Pi 4 Model B). Save the file and then on reboot the lights
-will be disabled. To return the LED lights to normal remove the added
-lines.
+the /boot/firmware/config.txt file and add the following lines. 
+Save the file and then on reboot the lights will be disabled. 
+To return the LED lights to normal remove the added lines.
 
-<pre>dtparam=act_led_trigger=none
-
+<pre>#Disable led
+dtparam=act_led_trigger=none
 dtparam=act_led_activelow=off
-
 dtparam=pwr_led_trigger=none
-
 dtparam=pwr_led_activelow=off</pre>
 
 ### <span id="anchor-81"></span><span id="anchor-82"></span><span id="anchor-83"></span><span id="anchor-84"></span><span id="anchor-85"></span><span id="anchor-86"></span>lower clock frequency
@@ -423,7 +427,6 @@ Modify in :`arm_boost=0`
 Add below `[all]` :
 
 <pre>arm_freq=600
-
 arm_freq_max=600</pre>
 
-comment the linedtparam=audio=on`
+comment using a '#' the line: dtparam=audio=on`
