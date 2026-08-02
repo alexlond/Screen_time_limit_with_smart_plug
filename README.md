@@ -144,7 +144,13 @@ If you want to restart the raspberry: `sudo reboot`
 
 `sudo apt install mosquitto mosquitto-clients`
 
-`sudo systemctl enable mosquitto`
+create a new file: `sudo nano /etc/mosquitto/conf.d/network.conf`
+add the following text
+<pre>listener 1883
+allow_anonymous true</pre>
+save and close
+
+execute the following command: `sudo systemctl enable mosquitto`
 
 ## <span id="anchor-30"></span><span id="anchor-31"></span><span id="anchor-32"></span><span id="anchor-33"></span><span id="anchor-34"></span><span id="anchor-35"></span>Create the “venv” Virtual environment for python
 
@@ -176,6 +182,10 @@ Modules installed with pip will be placed in the local “venv” folders
 (venvTv) alexl@raspberrypi:~ \$ `pip install python-telegram-bot`
 
 (venvTv) alexl@raspberrypi:~ \$ `pip install dotenv`
+
+(venvTv) alexl@raspberrypi:~ \$ `pip install requests`
+
+(venvTv) alexl@raspberrypi:~ \$ `pip install psutil`
 
 (venvTv) alexl@raspberrypi:~ \$ `pip install aiomqtt`
 Install the library to have async MQTT
