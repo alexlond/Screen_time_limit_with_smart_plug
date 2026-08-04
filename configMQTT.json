@@ -1,34 +1,34 @@
 {
-  "daily_minutes": 125,
-  "powered_on_min_watts": 10,
+  "daily_minutes": 60,
+  "powered_on_min_watts": 30,
   "broker": "192.168.1.27",
   "port": 1883,
   "interval_minutes": 2,
-  "default_daily_minutes": 125,
+  "default_daily_minutes": 61,
   "add_errors_to_user1": false,
   "plugs": [
     {
       "plug_id": 100001,
-      "name": "plug_salotto",
-      "topic_prefix": "tasmota_502E10",
+      "name": "plug_living",
+      "topic_prefix": "tasmota_567E10",
       "active": true
     },
     {
       "plug_id": 100002,
-      "name": "plug_ale",
-      "topic_prefix": "tasmota_502EAF",
+      "name": "plug_alex",
+      "topic_prefix": "tasmota_505EBF",
       "active": false
     },
     {
       "plug_id": 100003,
       "name": "plug3",
-      "topic_prefix": "tasmota_502D76",
+      "topic_prefix": "tasmota_518D86",
       "active": false
     },
     {
       "plug_id": 100004,
       "name": "plug4",
-      "topic_prefix": "tasmota_546D20",
+      "topic_prefix": "tasmota_546910",
       "active": false
     }
   ]

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# TvTelegramBot.py
+# TvTelegramBotMQTT.py
 # Multi-plug / multi-user Telegram bot with per-user booking calendar (admin-only)
 #
 # Requirements:
@@ -10,13 +10,13 @@
 #   AUTHORIZED_USER_ID  (admin numeric Telegram user id)
 #   chatID (optional broadcast chat id)
 #
-# config.json (optional) may hold:
+# configMQTT.json (optional) may hold:
 # {
 #   "broker": "192.168.1.27",
 #   "port": 1883,
 #   "powered_on_min_watts": 30,
 #   "interval_minutes": 2,
-#   "default_daily_minutes": 100,
+#   "default_daily_minutes": 125,
 #   "plugs": [
 #     {"name": "plug1", "topic_prefix": "tasmota_512W10"},
 #     {"name": "plug2", "topic_prefix": "tasmota_QBCD19"}
@@ -91,7 +91,7 @@ DEFAULT_CONFIG = {
     "powered_on_min_watts": 30,
     "interval_minutes": 2,
     "plugs": [],
-    "default_daily_minutes": 125,
+    "default_daily_minutes": 115,
     "add_errors_to_user1": False,
 }
 
@@ -107,6 +107,7 @@ commands_help_text = [
     "",
     "**Admin Commands:**",
     "/addminutes <user_id|@username> <minutes>",
+    "/addminutesTomorrow <user_id|@username> <minutes>",
     "/setDailyMinutes <user_id|@username> <minutes>",
     "/timerMinutesHoliday <plugname> <minutes> - set minutes of holidays (admin only)",
     "/book <user> - Manage bookings",
@@ -146,6 +147,22 @@ def save_json(path: str, data):
             json.dump(data, f, indent=2, default=str)
     except Exception as e:
         logger.error("Error saving %s: %s", path, e)
+def split_message(text, max_len=4096):
+    parts = []
+
+    while len(text) > max_len:
+        split = text.rfind("\n", 0, max_len)
+
+        if split == -1:
+            split = max_len
+
+        parts.append(text[:split])
+        text = text[split:].lstrip("\n")
+
+    if text:
+        parts.append(text)
+
+    return parts        
 
 config = load_json_if_exists(CONFIG_FILE, DEFAULT_CONFIG)
 
@@ -254,7 +271,7 @@ class WeeklyCalendar:
 # User and Plug objects
 # -------------------
 class User:
-    def __init__(self, user_id: int, username: str, default_minutes: int, initial_minutes: int):
+    def __init__(self, user_id: int, username: str, default_minutes: int, initial_minutes: int, tomorrow_minutes: int = 0):
         self.user_id = int(user_id)
         self.username = username or ""
         self.default_minutes = int(default_minutes)
@@ -263,6 +280,7 @@ class User:
         self.used_minutes = 0  # <-- Added variable
         self.active_plug: Optional["Plug"] = None
         self.error_minutes: float = 0
+        self.tomorrow_minutes = int(tomorrow_minutes)
 
     def to_dict(self):
         return {
@@ -272,15 +290,18 @@ class User:
             "initial_minutes": self.initial_minutes,
             "remaining_minutes": self.remaining_minutes,
             "used_minutes": self.used_minutes,  # <-- Added to dict
-            "error_minutes": self.error_minutes
+            "error_minutes": self.error_minutes,
+            "tomorrow_minutes": self.tomorrow_minutes
         }
 
     @classmethod
     def from_dict(cls, d):
-        u = cls(d["user_id"], d.get("username", ""),  d.get("default_minutes", 0), d.get("initial_minutes", 0))
+        u = cls(d["user_id"], d.get("username", ""),  d.get("default_minutes", 0), d.get("initial_minutes", 0), d.get("tomorrow_minutes", 0))
         u.default_minutes = int(d.get("default_minutes", u.default_minutes))
         u.remaining_minutes = int(d.get("remaining_minutes", u.initial_minutes))
         u.used_minutes = int(d.get("used_minutes", 0))  # <-- Load from dict
+        u.error_minutes = float(d.get("error_minutes", 0))
+        u.tomorrow_minutes = int(d.get("tomorrow_minutes", 0))
         return u
 
     def attach_plug(self, plug: "Plug"):
@@ -309,7 +330,8 @@ class User:
         if new_initial is not None:
             self.initial_minutes = int(new_initial)
         if reset_remaining:
-            self.remaining_minutes = int(self.initial_minutes)
+            self.remaining_minutes = int(self.initial_minutes)+int(self.tomorrow_minutes)  # <-- Reset remaining_minutes to initial + tomorrow_minutes
+            self.tomorrow_minutes = 0  # Reset tomorrow_minutes after applying
         if reset_error:
             self.error_minutes = 0
         if reset_used:
@@ -426,11 +448,11 @@ class Plug:
 class SystemManager:
     def __init__(self, config: dict, calendar: WeeklyCalendar):
         self.config = config
-        self.broker = config.get("broker", DEFAULT_CONFIG["broker"])
-        self.port = int(config.get("port", DEFAULT_CONFIG["port"]))
-        self.power_threshold = config.get("powered_on_min_watts", DEFAULT_CONFIG["powered_on_min_watts"])
-        self.interval_minutes = int(config.get("interval_minutes", DEFAULT_CONFIG["interval_minutes"]))
-        self.add_errors_to_user1 = config.get("add_errors_to_user1", DEFAULT_CONFIG["add_errors_to_user1"])
+        self.broker = config.get("broker", config["broker"])
+        self.port = int(config.get("port", config["port"]))
+        self.power_threshold = config.get("powered_on_min_watts", config["powered_on_min_watts"])
+        self.interval_minutes = int(config.get("interval_minutes", config["interval_minutes"]))
+        self.add_errors_to_user1 = config.get("add_errors_to_user1", config["add_errors_to_user1"])
         self.plugs: Dict[str, Plug] = {}
         self.users: Dict[int, User] = {}
         self._bg_task: Optional[asyncio.Task] = None
@@ -460,11 +482,11 @@ class SystemManager:
 
         # create placeholders if no users
         if not self.users:
-            default_minutes = int(self.config.get("default_daily_minutes", DEFAULT_CONFIG["default_daily_minutes"]))
+            default_minutes = int(self.config.get("default_daily_minutes", config["default_daily_minutes"]))
             placeholders = [("user1", default_minutes), ("user2", default_minutes), ("user3", default_minutes), ("user4", default_minutes), ("user5", default_minutes)]
             for i, (uname, mins) in enumerate(placeholders, start=1):
                 uid = 100000 + i
-                self.users[uid] = User(uid, uname, mins, mins)
+                self.users[uid] = User(uid, uname, mins, mins, 0)
             self.persist_users()
 
         # attach user1 to first plug by default if exists
@@ -484,7 +506,7 @@ class SystemManager:
         save_json(USERS_FILE, out)
 
     def persist_config(self):
-        """Save current config including plug active states back to config.json"""
+        """Save current config including plug active states back to configMQTT.json"""
         config_data = dict(self.config)
         # Update plugs with current active states
         plugs_config = []
@@ -513,8 +535,8 @@ class SystemManager:
     def get_user_by_telegram(self, tg_user) -> User:
         if tg_user.id in self.users:
             return self.users[tg_user.id]
-        default_minutes = int(self.config.get("default_daily_minutes", DEFAULT_CONFIG["default_daily_minutes"]))
-        user = User(tg_user.id, tg_user.username or tg_user.first_name or str(tg_user.id), default_minutes, default_minutes)
+        default_minutes = int(self.config.get("default_daily_minutes", config["default_daily_minutes"]))
+        user = User(tg_user.id, tg_user.username or tg_user.first_name or str(tg_user.id), default_minutes, default_minutes, 0)
         self.users[user.user_id] = user
         self.persist_users()
         logger.info("Created new user %s (%s) with %d minutes", user.username, user.user_id, default_minutes)
@@ -739,8 +761,9 @@ async def status_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     for u in manager.users.values():
         message_part_error = f", error = {u.error_minutes:.1f} mins" if u.error_minutes > 0 else ""
         message_part_used = f", used = {u.used_minutes} mins" if u.used_minutes > 0 else ""
+        message_part_tomorrow = f", tomorrow = {u.tomorrow_minutes} mins" if u.tomorrow_minutes > 0 else ""
         lines.append(
-            f"  • @{u.username} ({u.user_id}): remaining={u.remaining_minutes} min{message_part_error}{message_part_used}"
+            f"  • @{u.username} ({u.user_id}): remaining={u.remaining_minutes} min{message_part_error}{message_part_used}{message_part_tomorrow}"
         )
     lines.append("")    
     lines.append(f"Uptime: {uptime_str} Commands: /startplug <plugname>, /stopplug <plugname>, /help, ..., /status")
@@ -927,6 +950,41 @@ async def addminutes_command(update: Update, context: ContextTypes.DEFAULT_TYPE)
     manager.persist_users()
     await update.message.reply_text(f"Added {minutes} minutes to {target_user.username}. Now {target_user.remaining_minutes} min left.")
 
+# admin-only: addminutesTomorrow (only admin may use)
+async def addminutesTomorrow_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_authorized(update.effective_user.id):
+        await update.message.reply_text("You are not authorized to use this command.")
+        return
+    if len(context.args) == 0:
+        await update.message.reply_text("Usage: /addminutes <user_id|@username> <minutes>")
+        return
+    if len(context.args) == 1:
+        await update.message.reply_text("Usage: /addminutes <user_id|@username> <minutes>")
+        return
+    target_key = context.args[0]
+    try:
+        minutes = int(context.args[1])
+    except Exception:
+        await update.message.reply_text("Minutes must be integer")
+        return
+    target_user = None
+    # try id
+    try:
+        t_uid = int(target_key)
+        target_user = manager.get_user_by_id(t_uid)
+    except Exception:
+        # username
+        for u in manager.users.values():
+            if u.username and u.username.lower() == target_key.lstrip("@").lower():
+                target_user = u
+                break
+    if not target_user:
+        await update.message.reply_text("Target user not found")
+        return
+    target_user.tomorrow_minutes += minutes
+    manager.persist_users()
+    await update.message.reply_text(f"Added tomorrow{minutes} minutes to {target_user.username}. Now {target_user.tomorrow_minutes} min left.")
+
 # admin-only: set daily minutes
 async def set_daily_minutes_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not is_authorized(update.effective_user.id):
@@ -959,7 +1017,6 @@ async def set_daily_minutes_command(update: Update, context: ContextTypes.DEFAUL
     target_user.reset_daily(default_daily_minutes,None, reset_remaining=False, reset_used=False, reset_error=False)  # only change default_minutes
     manager.persist_users()
     await update.message.reply_text(f"{target_user.username} default daily minutes set to {default_daily_minutes}. Remaining reset.")
-
 
 #   # admin-only: show calendar
 async def show_calendar(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1008,8 +1065,8 @@ async def my_bookings_command(update: Update, context: ContextTypes.DEFAULT_TYPE
     lines = [f"👤 @{manager.get_user_by_id(target_id).username} ({target_id})"]
     for d, slot, info in slots:
         lines.append(f"  • {d} {slot} (booked {info.get('booked_at')})")
-    await update.message.reply_text("\n".join(lines))
-
+    for part in split_message("\n".join(lines)):
+        await update.message.reply_text(part)
 
 # Enhanced booking functions with rate limit protection and multi-slot support
 async def show_time_slots(update: Update, context: ContextTypes.DEFAULT_TYPE, day_name: str, target_user_id: int):
@@ -1691,6 +1748,7 @@ def main():
     application.add_handler(CommandHandler("timerMinutesHoliday", timerMinutesHoliday_command))
     application.add_handler(CommandHandler("stopplug", stopplug_command))
     application.add_handler(CommandHandler("addminutes", addminutes_command))
+    application.add_handler(CommandHandler("addminutesTomorrow", addminutesTomorrow_command))
     application.add_handler(CommandHandler("setDailyMinutes", set_daily_minutes_command))
     application.add_handler(CommandHandler("listplugs", listplugs_command))
     application.add_handler(CommandHandler("plug", plug_command))
