@@ -1014,7 +1014,8 @@ async def set_daily_minutes_command(update: Update, context: ContextTypes.DEFAUL
     if not target_user:
         await update.message.reply_text("Target user not found")
         return
-    target_user.reset_daily(default_daily_minutes,None, reset_remaining=False, reset_used=False, reset_error=False)  # only change default_minutes
+    initial_minutes = default_daily_minutes
+    target_user.reset_daily(default_daily_minutes, initial_minutes, reset_remaining=False, reset_used=False, reset_error=False)  
     manager.persist_users()
     await update.message.reply_text(f"{target_user.username} default daily minutes set to {default_daily_minutes}. Remaining reset.")
 
